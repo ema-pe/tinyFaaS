@@ -31,7 +31,9 @@ sys.path.append(grpc_api_path)
 def setUpModule() -> None:
     """start tinyfaas instance"""
     try:
-        subprocess.run(["just", "clean-docker"], cwd=src_path, check=True, capture_output=True)
+        subprocess.run(
+            ["just", "clean-docker"], cwd=src_path, check=True, capture_output=True
+        )
     except subprocess.CalledProcessError as e:
         print(f"Failed to clean up:\n{e.stderr.decode('utf-8')}")
 
@@ -127,7 +129,9 @@ def tearDownModule() -> None:
         print("Failed to stop: Timeout expired")
 
     try:
-        subprocess.run(["just", "clean-docker"], cwd=src_path, check=True, capture_output=True)
+        subprocess.run(
+            ["just", "clean-docker"], cwd=src_path, check=True, capture_output=True
+        )
     except subprocess.CalledProcessError as e:
         print(f"Failed to clean up:\n{e.stderr.decode('utf-8')}")
 
