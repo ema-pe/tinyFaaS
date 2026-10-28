@@ -23,6 +23,8 @@ test: build proto-py
 
 clean:
     sudo sh clean.sh
+    rm --recursive --force --verbose pkg/docker/runtimes-*/
+    rm --force --verbose tinyfaas-*-* cmd/manager/rproxy-*.bin
 
 # Install protoc to /usr/local, protoc-gen-go and protoc-gen-go-grpc (via Go). Go, curl and unzip must be already installed.
 install-protoc:
