@@ -19,7 +19,7 @@ start: build
     sudo ./tinyfaas-{{os}}-{{arch}}
 
 test: build proto-py
-    {{py}} {{test_dir}}/test_all.py
+    sudo env "PATH=$PATH" {{py}} {{test_dir}}/test_all.py
 
 clean:
     sudo sh clean.sh
