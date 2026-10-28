@@ -101,35 +101,34 @@ tinyFaaS until the reverse proxy is running.
 
 ### Managing Functions
 
-To manage functions on tinyFaaS, use the `./tinyfaas-cli.py` script. It is
-run with uv, which installs its only dependency (`requests`) automatically. Run
-`./tinyfaas-cli.py --help` for all commands, and `--url` to target a
-management service other than `http://localhost:8080`.
+To manage functions on tinyFaaS, use the `./tinyfaas-cli.py` script. Run
+`./tinyfaas-cli.py --help` for all commands, and `--url` to target a management
+service other than `http://localhost:8080`.
 
-To upload a function, run `tinyfaas-cli.py upload {FOLDER} {NAME} {ENV}
-{THREADS}`, where `{FOLDER}` is the path to your function code, `{NAME}` is
-the name for your function, `{ENV}` is the environment you want to use
-(`python3`, `nodejs`, or `binary`), and `{THREADS}` is the number of function
-handlers for your function. For example, you can run `./tinyfaas-cli.py upload
+To upload a function, run `./tinyfaas-cli.py upload {FOLDER} {NAME} {ENV}
+{THREADS}`, where `{FOLDER}` is the path to your function code, `{NAME}` is the
+name for your function, `{ENV}` is the environment you want to use (`python3`,
+`nodejs`, or `binary`), and `{THREADS}` is the number of function handlers for
+your function. For example, you can run `./tinyfaas-cli.py upload
 "./test/fns/sieve-of-eratosthenes" "sieve" "nodejs" 1` to upload the _Sieve of
 Eratosthenes_ example function included in this repository. Environment
 variables for the function can be passed with `-e KEY=VALUE` (repeatable).
 
 Alternatively, you can upload a function from a zip file available at a URL:
-`tinyfaas-cli.py upload-url {URL} {SUBFOLDER_PATH} {NAME} {ENV} {THREADS}`,
+`./tinyfaas-cli.py upload-url {URL} {SUBFOLDER_PATH} {NAME} {ENV} {THREADS}`,
 where `{URL}` is the URL of a zip file containing your function code and
 `{SUBFOLDER_PATH}` is the folder containing the code within the zip (use `/` if
 the code is at the top level). For example, you can run `./tinyfaas-cli.py
 upload-url "https://github.com/OpenFogStack/tinyFaaS/archive/main.zip"
 "tinyFaaS-main/test/fns/sieve-of-eratosthenes" "sieve" "nodejs" 1`.
 
-To get a list of existing functions, run `tinyfaas-cli.py list`.
+To get a list of existing functions, run `./tinyfaas-cli.py list`.
 
-To delete a function, run `tinyfaas-cli.py delete {NAME}`.
+To delete a function, run `./tinyfaas-cli.py delete {NAME}`.
 
-To read the logs of all functions, run `tinyfaas-cli.py logs`, or
-`tinyfaas-cli.py logs {NAME}` for a single function. To remove all functions,
-run `tinyfaas-cli.py wipe`.
+To read the logs of all functions, run `./tinyfaas-cli.py logs`, or
+`./tinyfaas-cli.py logs {NAME}` for a single function. To remove all functions,
+run `./tinyfaas-cli.py wipe`.
 
 ### Writing Functions
 
