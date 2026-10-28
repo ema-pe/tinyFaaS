@@ -50,23 +50,42 @@ Before you get started, make sure you have the following dependencies installed:
 
 - Go (>=v1.22) to compile management service and reverse proxy
 - Docker (>=v24)
-- Make
+- [just](https://github.com/casey/just)
+- curl and unzip, only for `just install-protoc`
+- [uv](https://docs.astral.sh/uv/), used to run the Python tooling
 - a writable directory (tinyFaaS writes temporary files to a `./tmp` directory)
 
 Note that tinyFaaS is intended for Linux hosts (`x86_64` and `arm64`).
 Due to limitations of Docker Desktop for Mac, installing and running [`docker-mac-net-connect`](https://github.com/chipmk/docker-mac-net-connect) is necessary to run tinyFaaS on macOS hosts.
 Running tinyFaaS on Windows computers (native or through WSL) is probably possible but has not been tested and is thus not recommended.
 
+#### One-Time Setup
+
+Building tinyFaaS generates the gRPC code from the protocol buffer definition,
+which requires `protoc`, `protoc-gen-go`, and `protoc-gen-go-grpc`. If you do
+not have them yet, install them once with:
+
+```sh
+just install-protoc
+```
+
+Make sure that directory (usually `~/go/bin`) is in your `PATH`, otherwise
+`protoc` will not find the plugins.
+
 ### Getting Started
 
 Start tinyFaaS with:
 
 ```sh
-make start
+just start
 ```
 
-The reverse proxy will be started automatically.
-Please note that you cannot use tinyFaaS until the reverse proxy is running.
+This builds tinyFaaS for your host platform if necessary and runs it with
+`sudo`, so you may be asked for your password. To cross-compile instead, use
+`just tinyfaas {OS} {ARCH}`, for example `just tinyfaas linux arm64`.
+
+The reverse proxy will be started automatically. Please note that you cannot use
+tinyFaaS until the reverse proxy is running.
 
 ### Managing Functions
 
@@ -145,19 +164,19 @@ Specify the tinyFaaS host and port (default is `9000`) for the GRPC endpoint and
 
 ### Removing tinyFaaS
 
-When you stop the management service with `SIGINT` (`Ctrl+C`), the reverse proxy and all function handlers should be stopped.
-You can also use:
+When you stop the management service with `SIGINT` (`Ctrl+C`), the reverse proxy
+and all function handlers should be stopped. You can also use:
 
 ```bash
-make clean
+just clean
 ```
 
 OR
 
 ```bash
-docker rm -f $$(docker ps -a -q --filter label=tinyFaaS)
-docker network rm $$(docker network ls -q --filter label=tinyFaaS)
-docker rmi $$(docker image ls -q --filter label=tinyFaaS)
+sudo docker rm -f $(sudo docker ps -a -q --filter label=tinyFaaS)
+sudo docker network rm $(sudo docker network ls -q --filter label=tinyFaaS)
+sudo docker rmi $(sudo docker image ls -q --filter label=tinyFaaS)
 rm -rf ./tmp
 ```
 
@@ -190,23 +209,16 @@ The tests can also serve as documentation on the expected behavior of tinyFaaS.
 
 Running the tests requires:
 
-- Python >3.10 with the `venv` module
+- Python >3.10
 - a tinyFaaS binary built for your host
 
-Create a virtual environment for Python and install the necessary dependencies for CoAP and gRPC:
-
-```sh
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install -r test/requirements.txt
-```
-
-If you do not install these requirements, test runs are limited to invocations with HTTP.
+The Python dependencies for CoAP and gRPC are installed automatically by `uv`
+when you run `just test`.
 
 Run the tests with:
 
 ```sh
-$ make test
+$ just test
 .............
 ----------------------------------------------------------------------
 Ran 13 tests in 28.063s
