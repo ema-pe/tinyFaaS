@@ -223,11 +223,9 @@ data in any form you want.
 ### Removing tinyFaaS
 
 When you stop the management service with `SIGINT` (`Ctrl+C`), the reverse proxy
-and all function handlers should be stopped. You can also use:
-
-```bash
-just clean
-```
+and all function handlers should be stopped. You can also use `just
+clean-docker` to delete generated Docker containers, networks and images, or
+`just clean` to delete also generated files in the repository.
 
 ### Specifying Ports
 

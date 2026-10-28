@@ -21,8 +21,12 @@ start: build
 test: build proto-py
     sudo env "PATH=$PATH" {{py}} {{test_dir}}/test_all.py
 
-clean:
+# Remove only Docker objects.
+clean-docker:
     sudo sh clean.sh
+
+# Remove Docker objects and also generated files in the git repository.
+clean: clean-docker
     rm --recursive --force --verbose pkg/docker/runtimes-*/
     rm --force --verbose tinyfaas-*-* cmd/manager/rproxy-*.bin
 
