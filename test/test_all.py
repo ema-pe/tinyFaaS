@@ -23,7 +23,6 @@ connection: typing.Dict[str, typing.Union[str, int]] = {
 tf_process: typing.Optional[subprocess.Popen] = None  # type: ignore
 src_path = "."
 fn_path = path.join(src_path, "test", "fns")
-script_path = path.join(src_path, "scripts")
 grpc_api_path = path.join(src_path, "pkg", "grpc", "tinyfaas")
 sys.path.append(grpc_api_path)
 
@@ -106,10 +105,13 @@ def setUpModule() -> None:
 def tearDownModule() -> None:
     """stop tinyfaas instance"""
 
-    # call wipe-functions.sh
+    # wipe all functions with the management script
     try:
         subprocess.run(
-            ["./wipe-functions.sh"], cwd=script_path, check=True, capture_output=True
+            ["uv", "run", "--script", "tinyfaas-cli.py", "wipe"],
+            cwd=src_path,
+            check=True,
+            capture_output=True,
         )
     except subprocess.CalledProcessError as e:
         print(f"Failed to wipe functions:\n{e.stderr.decode('utf-8')}")
@@ -144,11 +146,21 @@ def startFunction(folder_name: str, fn_name: str, env: str, threads: int) -> str
     # get full path of folder
     folder_name = os.path.abspath(folder_name)
 
-    # use the upload.sh script
+    # use the management script
     try:
         subprocess.run(
-            ["./upload.sh", folder_name, fn_name, env, str(threads)],
-            cwd=script_path,
+            [
+                "uv",
+                "run",
+                "--script",
+                "tinyfaas-cli.py",
+                "upload",
+                folder_name,
+                fn_name,
+                env,
+                str(threads),
+            ],
+            cwd=src_path,
             check=True,
             capture_output=True,
         )

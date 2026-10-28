@@ -1,4 +1,5 @@
 tinyfaas-*
+!tinyfaas-cli.py
 cmd/manager/rproxy-*.bin
 tmp/
 pkg/docker/runtimes-*/
