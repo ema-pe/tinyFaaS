@@ -266,21 +266,9 @@ Running the tests requires:
 - a tinyFaaS binary built for your host
 
 The Python dependencies for CoAP and gRPC are installed automatically by `uv`
-when you run `just test`.
-
-Run the tests with:
-
-```sh
-$ just test
-.............
-----------------------------------------------------------------------
-Ran 13 tests in 28.063s
-
-OK
-```
-
-Tests will output a `.` (dot) for successful tests and `E` or `F` for failed tests.
-tinyFaaS output will be written to `tf_test.out`.
+when you run `just test`. Run the tests with `just test`. You will be able to
+see the output and result for each test. tinyFaaS output will be written to
+`tf_test.out`.
 
 On macOS,
 [`docker-mac-net-connect`](https://github.com/chipmk/docker-mac-net-connect) is
