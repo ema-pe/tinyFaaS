@@ -62,28 +62,23 @@ install-protoc:
     protoc --version
     echo "Make sure $(go env GOPATH)/bin is in your PATH."
 
-# requires protoc, protoc-gen-go and protoc-gen-go-grpc
-# install from your package manager, e.g.:
-#   brew install protobuf
-#   brew install protoc-gen-go
-#   brew install protoc-gen-go-grpc
+# Generate Protocol Buffers code for Go
 proto-go:
     protoc -I {{proto_dir}} {{proto_dir}}/tinyfaas.proto \
         --go_out={{proto_dir}} --go_opt=paths=source_relative \
         --go-grpc_out={{proto_dir}} --go-grpc_opt=require_unimplemented_servers=false,paths=source_relative
 
-# requires grpcio-tools and mypy-protobuf
-#   python3 -m pip install -r requirements.txt
+# Generate Protocol Buffers code for Python
 proto-py:
     {{py}} -m grpc_tools.protoc -I {{proto_dir}} \
         --python_out={{proto_dir}} --grpc_python_out={{proto_dir}} --mypy_out={{proto_dir}} \
         {{proto_dir}}/tinyfaas.proto
 
-# build the reverse proxy for a given target
+# Build the reverse proxy for a given target (`just rproxy linux arm64`).
 rproxy goos goarch: proto-go proto-py
     GOOS={{goos}} GOARCH={{goarch}} go build -o cmd/manager/rproxy-{{goos}}-{{goarch}}.bin -v {{pkg}}/cmd/rproxy
 
-# build the runtime images/blobs for one architecture
+# Build the runtime images/blobs for one architecture
 runtimes a:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -103,12 +98,12 @@ runtimes a:
         sudo docker kill "{{project_name}}-$rt"
     done
 
-# build the runtimes for every supported architecture
+# Build the runtimes for every supported architecture
 runtimes-all:
     #!/usr/bin/env bash
     set -euo pipefail
     for a in {{supported_arch}}; do just runtimes "$a"; done
 
-# build the manager for a given target, e.g. `just tinyfaas linux arm64`
+# Build the management service for a given target (`just tinyfaas linux arm64`).
 tinyfaas goos goarch: (rproxy goos goarch) (runtimes goarch)
     GOOS={{goos}} GOARCH={{goarch}} go build -o tinyfaas-{{goos}}-{{goarch}} -v {{pkg}}/cmd/manager
