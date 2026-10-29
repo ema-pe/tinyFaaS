@@ -42,7 +42,7 @@ func main() {
 	}
 
 	for p := range ports {
-		portstr := os.Getenv(p + "_PORT")
+		portstr := os.Getenv(strings.ToUpper(p) + "_PORT")
 
 		if portstr == "" {
 			continue

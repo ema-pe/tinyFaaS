@@ -256,23 +256,28 @@ By default, tinyFaaS will use the following ports:
 | Port | Protocol | Description        |
 | ---- | -------- | ------------------ |
 | 8080 | TCP      | Management Service |
+| 8081 | TCP      | Reverse Proxy      |
 | 5683 | UDP      | CoAP Endpoint      |
 | 8000 | TCP      | HTTP Endpoint      |
 | 9000 | TCP      | GRPC Endpoint      |
 
-To change the port of the management service, change the port binding in the
-`docker run` command.
+The reverse proxy exposes Prometheus metrics at `http://<host>:8081/metrics`:
+
+* `tinyfaas_function_duration_seconds` (histogram, label `function_name`):
+  duration of function invocations.
+* `tinyfaas_function_invocation_total` (counter, labels `function_name`,
+  `status` and `activation_type`, either `sync` or `async`): number of
+  function invocations. `status` is the HTTP status code returned by the
+  function handler (regardless of the protocol used to invoke the function), or
+  `502` if the function handler could not be reached.
 
 To change or deactivate the endpoints of tinyFaaS, you can use the `COAP_PORT`,
-`HTTP_PORT`, and `GRPC_PORT` environment variables, which must be passed to the
-management service Docker container. Specify `-1` to deactivate a specific
-endpoint. For example, to use `6000` as the port for the CoAP and deactivate
-GRPC, run the management service with this command:
+`HTTP_PORT`, and `GRPC_PORT` environment variables. Specify `-1` to deactivate a
+specific endpoint. For example, to use `6000` as the port for the CoAP and
+deactivate GRPC, build tinyFaaS and run it with this command:
 
-```bash
-docker run --env COAP_PORT=6000 --env GRPC_PORT=-1 \
-    -v /var/run/docker.sock:/var/run/docker.sock -p 8080:8080 \
-    --name tinyfaas-mgmt -d tinyfaas-mgmt tinyfaas-mgmt
+```sh
+$ sudo env COAP_PORT=6000 GRPC_PORT=-1 ./tinyfaas-linux-amd64
 ```
 
 ### Tests

@@ -13,6 +13,7 @@ import (
 	"github.com/OpenFogStack/tinyFaaS/pkg/grpc"
 	tfhttp "github.com/OpenFogStack/tinyFaaS/pkg/http"
 	"github.com/OpenFogStack/tinyFaaS/pkg/rproxy"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -61,7 +62,9 @@ func main() {
 
 	server := http.NewServeMux()
 
-	server.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	server.Handle("/metrics", promhttp.Handler())
+
+	server.HandleFunc("/",func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != "POST" {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
