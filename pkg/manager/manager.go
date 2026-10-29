@@ -48,7 +48,6 @@ type Handler interface {
 }
 
 func New(id string, rproxyListenAddress string, rproxyPort map[string]int, rproxyConfigPort int, tfBackend Backend) *ManagementService {
-
 	ms := &ManagementService{
 		id:                  id,
 		backend:             tfBackend,
@@ -62,7 +61,6 @@ func New(id string, rproxyListenAddress string, rproxyPort map[string]int, rprox
 }
 
 func (ms *ManagementService) createFunction(name string, env string, threads int, funczip []byte, subfolderPath string, envs map[string]string) (string, error) {
-
 	// only allow alphanumeric characters
 	if !util.IsAlphaNumeric(name) {
 		return "", fmt.Errorf("%w: %s contains non-alphanumeric characters", ErrInvalidFunctionName, name)
@@ -195,7 +193,6 @@ func (ms *ManagementService) createFunction(name string, env string, threads int
 }
 
 func (ms *ManagementService) Logs() (io.Reader, error) {
-
 	var logs bytes.Buffer
 
 	for name := range ms.functionHandlers {
@@ -216,7 +213,6 @@ func (ms *ManagementService) Logs() (io.Reader, error) {
 }
 
 func (ms *ManagementService) LogsFunction(name string) (io.Reader, error) {
-
 	fh, ok := ms.functionHandlers[name]
 	if !ok {
 		return nil, fmt.Errorf("function %s not found", name)
@@ -243,7 +239,6 @@ func (ms *ManagementService) Wipe() error {
 	return nil
 }
 func (ms *ManagementService) Delete(name string) error {
-
 	fh, ok := ms.functionHandlers[name]
 	if !ok {
 		return fmt.Errorf("function %s not found", name)
@@ -299,7 +294,6 @@ func (ms *ManagementService) Delete(name string) error {
 }
 
 func (ms *ManagementService) Upload(name string, env string, threads int, zipped string, envs map[string]string) (string, error) {
-
 	// b64 decode zip
 	zip, err := base64.StdEncoding.DecodeString(zipped)
 	if err != nil {
@@ -315,7 +309,15 @@ func (ms *ManagementService) Upload(name string, env string, threads int, zipped
 	// return success
 	r := ""
 	for prot, port := range ms.rproxyPort {
-		r += fmt.Sprintf("%s://%s:%d/%s\n", prot, ms.rproxyListenAddress, port, n)
+		// If ms.rproxyListenAddress is empty means that tinyFaaS accepts
+		// connection from any interface, including "localhost". We need to set
+		// this value to print a meaningful HTTP/COAP/gRPC address.
+		listenAddr := ms.rproxyListenAddress
+		if ms.rproxyListenAddress == "" {
+			listenAddr = "localhost"
+		}
+
+		r += fmt.Sprintf("%s://%s:%d/%s\n", prot, listenAddr, port, n)
 	}
 
 	return r, nil
