@@ -4,6 +4,7 @@ import (
 	"bufio"
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -241,10 +242,14 @@ func (s *server) uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res, err := s.ms.Upload(d.FunctionName, d.FunctionEnv, d.FunctionThreads, d.FunctionZip, envs)
-
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err)
+		if errors.Is(err, manager.ErrInvalidFunctionName) {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, err)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
