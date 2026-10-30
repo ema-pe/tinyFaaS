@@ -3,8 +3,6 @@ pkg          := "github.com/OpenFogStack/" + project_name
 test_dir     := "./test"
 proto_dir    := "pkg/grpc/tinyfaas"
 
-supported_arch := "amd64 arm arm64"
-
 os   := `go env GOOS`
 arch := `go env GOARCH`
 
@@ -45,21 +43,27 @@ install-protoc:
     esac
 
     # Get the latest version tag.
-    tag=$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+    tag=$(curl --fail --silent --show-error --location --head --output /dev/null \
+        --write-out '%{url_effective}' \
         https://github.com/protocolbuffers/protobuf/releases/latest | sed 's|.*/||')
     version="${tag#v}"
     echo "Installing protoc ${version} (${platform})"
 
-    tmp=$(mktemp -d)
-    trap 'rm -rf "$tmp"' EXIT
-    curl -fsSL -o "$tmp/protoc.zip" "https://github.com/protocolbuffers/protobuf/releases/download/${tag}/protoc-${version}-${platform}.zip"
+    tmp=$(mktemp --directory)
+
+    # Make sure to remove the tmp dir on exit (also on errors).
+    trap 'rm --recursive --force "$tmp"' EXIT
+
+    # Get the binary.
+    curl --fail --silent --show-error --location --output "$tmp/protoc.zip" \
+        "https://github.com/protocolbuffers/protobuf/releases/download/${tag}/protoc-${version}-${platform}.zip"
     unzip -q "$tmp/protoc.zip" -d "$tmp/protoc"
 
-    sudo install -m 0755 "$tmp/protoc/bin/protoc" /usr/local/bin/protoc
-    sudo mkdir -p /usr/local/include
-    sudo cp -r "$tmp/protoc/include/." /usr/local/include/
+    sudo install --mode=0755 "$tmp/protoc/bin/protoc" /usr/local/bin/protoc
+    sudo mkdir --parents /usr/local/include
+    sudo cp --recursive "$tmp/protoc/include/." /usr/local/include/
 
-    # Required Go plugins
+    # Required Go plugins.
     go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
@@ -68,46 +72,63 @@ install-protoc:
 
 # Generate Protocol Buffers code for Go
 proto-go:
-    protoc -I {{proto_dir}} {{proto_dir}}/tinyfaas.proto \
+    protoc --proto_path={{proto_dir}} {{proto_dir}}/tinyfaas.proto \
         --go_out={{proto_dir}} --go_opt=paths=source_relative \
         --go-grpc_out={{proto_dir}} --go-grpc_opt=require_unimplemented_servers=false,paths=source_relative
 
 # Generate Protocol Buffers code for Python
 proto-py:
-    {{py}} -m grpc_tools.protoc -I {{proto_dir}} \
+    {{py}} -m grpc_tools.protoc --proto_path={{proto_dir}} \
         --python_out={{proto_dir}} --grpc_python_out={{proto_dir}} --mypy_out={{proto_dir}} \
         {{proto_dir}}/tinyfaas.proto
 
-# Build the reverse proxy for a given target (`just rproxy linux arm64`).
-rproxy goos goarch: proto-go proto-py
-    GOOS={{goos}} GOARCH={{goarch}} go build -o cmd/manager/rproxy-{{goos}}-{{goarch}}.bin -v {{pkg}}/cmd/rproxy
+# Build the reverse proxy for a given os/arch target (`just rproxy linux arm64`).
+[arg("arch", pattern="amd64|arm|arm64")]
+rproxy os arch: proto-go proto-py
+    GOOS={{os}} GOARCH={{arch}} go build -o cmd/manager/rproxy-{{os}}-{{arch}}.bin -v {{pkg}}/cmd/rproxy
 
-# Build the runtime images/blobs for one architecture
-runtimes a:
+# Build the runtime images/blobs for one architecture.
+[arg("arch", pattern="amd64|arm|arm64")]
+runtimes arch:
     #!/usr/bin/env bash
     set -euo pipefail
     for df in $(find pkg/docker/runtimes -name Dockerfile); do
         src=$(dirname "$df")
         rt=$(basename "$src")
-        out="pkg/docker/runtimes-{{a}}/$rt"
-        mkdir -p "$out"
-        cp -r "$src/Dockerfile" "$out/Dockerfile"
-        # skip if blob is newer than its build.Dockerfile
-        if [ -f "$out/blob.tar.gz" ] && [ "$out/blob.tar.gz" -nt "$src/build.Dockerfile" ]; then
+        out="pkg/docker/runtimes-{{arch}}/$rt"
+        blob="$out/blob.tar.gz"
+        image="tf-build-{{arch}}-$rt"
+        name="{{project_name}}-{{arch}}-$rt"
+
+        mkdir --parents "$out"
+        cp "$src/Dockerfile" "$out/Dockerfile"
+
+        # Skip build if the blob exists and no file in the build context is
+        # newer.
+        if [ -f "$blob" ] && [ -z "$(find "$src" -type f -newer "$blob" -print -quit)" ]; then
             continue
         fi
-        (cd "$src" && sudo docker build --platform=linux/{{a}} -t "tf-build-{{a}}-$rt" -f build.Dockerfile .)
-        sudo docker run -d -t --platform=linux/{{a}} --name "{{project_name}}-$rt" --rm "tf-build-{{a}}-$rt"
-        sudo docker export "{{project_name}}-$rt" | gzip > "$out/blob.tar.gz"
-        sudo docker kill "{{project_name}}-$rt"
+
+        (cd "$src" && sudo docker build --platform=linux/{{arch}} --tag "$image" --file build.Dockerfile .)
+
+        # Make sure there was not a container with the same name.
+        sudo docker rm --force "$name" >/dev/null 2>&1 || true
+
+        # Make sure that on exit or error the stale container and the
+        # half-written temporary blob are deleted!
+        trap 'sudo docker kill "$name" >/dev/null 2>&1 || true; rm --force "$blob.tmp"' EXIT
+
+        # Finally we can build the runtime.
+        sudo docker run --detach --tty --platform=linux/{{arch}} --name "$name" --rm "$image"
+        sudo docker export "$name" | gzip > "$blob.tmp"
+        sudo docker kill "$name" >/dev/null
+        mv "$blob.tmp" "$blob"
     done
 
-# Build the runtimes for every supported architecture
-runtimes-all:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    for a in {{supported_arch}}; do just runtimes "$a"; done
+# Build the runtimes for every supported architecture (amd64, arm, and arm64).
+runtimes-all: (runtimes "amd64") (runtimes "arm") (runtimes "arm64")
 
-# Build the management service for a given target (`just tinyfaas linux arm64`).
-tinyfaas goos goarch: (rproxy goos goarch) (runtimes goarch)
-    GOOS={{goos}} GOARCH={{goarch}} go build -o tinyfaas-{{goos}}-{{goarch}} -v {{pkg}}/cmd/manager
+# Build the management service for a given os/arch target (`just tinyfaas linux arm64`).
+[arg("arch", pattern="amd64|arm|arm64")]
+tinyfaas os arch: (rproxy os arch) (runtimes arch)
+    GOOS={{os}} GOARCH={{arch}} go build -o tinyfaas-{{os}}-{{arch}} -v {{pkg}}/cmd/manager
