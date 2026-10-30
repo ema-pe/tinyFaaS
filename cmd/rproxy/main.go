@@ -64,7 +64,7 @@ func main() {
 
 	server.Handle("/metrics", promhttp.Handler())
 
-	server.HandleFunc("/",func(w http.ResponseWriter, req *http.Request) {
+	server.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != "POST" {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
