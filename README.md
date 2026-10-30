@@ -308,3 +308,31 @@ restarting the tunnel:
 ```sh
 sudo brew services restart docker-mac-net-connect
 ```
+
+### Known limitations
+
+#### HTTP status code and headers
+
+Any function, in any runtime, cannot control the HTTP status code or the HTTP
+headers that are returned. Only the body is sent back to the client. If the
+function returns an error or throws an exception (except in the binary runtime),
+the error is included in the body and the HTTP status is 500.
+
+To recap, for function requests, tinyFaaS returns the following HTTP status
+codes to the client:
+
+* `200 OK`: The container responded with any status: success, a Python
+  exception, a Go error, a non-zero exit from a binary, or a Node.js
+  `res.status(...)`.
+* `202 Accepted`: The request had the `X-tinyFaaS-Async` header. The proxy
+  replies straight away and never waits for the function.
+* `404 Not Found`: No function is deployed under that name.
+* `500 Internal Server Error`: The proxy couldn't read the client's request
+  body, couldn't reach the container (connection refused, or the container
+  crashed mid-request), or couldn't read the container's response.
+
+#### Function timeout
+
+The reverse proxy does not set a timeout for a function request. A synchronous
+function that hangs keeps the client waiting forever instead of getting an error
+code.
