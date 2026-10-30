@@ -1,4 +1,20 @@
 version: 2
 
+# For now build only tinyfaas-linux-amd64.
+before:
+  hooks:
+    - just tinyfaas linux amd64
+
 builds:
   - skip: true
+
+# Add checksums for the generated binaries...
+checksum:
+  name_template: checksums.txt
+  extra_files:
+    - glob: ./tinyfaas-*-*
+
+# ...and release them!
+release:
+  extra_files:
+    - glob: ./tinyfaas-*-*
