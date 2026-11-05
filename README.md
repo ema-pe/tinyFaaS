@@ -7,7 +7,7 @@ This is a fork of the original tinyFaaS, created by Tobias Pfandzelter and David
 Bermbach. Most of the original code and design is preserved in this fork. The
 build system has been changed from Makefile to Just, and a few other minor
 things have been updated. Another difference is that this fork supports only
-Linux.
+Linux and CoAP support is removed.
 
 For the original tinyFaaS, please refer to its official [GitHub
 repository](https://github.com/OpenFogStack/tinyFaaS).
@@ -168,23 +168,8 @@ Input data is provided from `stdin`. Output responses should be provided on
 ### Calling Functions
 
 tinyFaaS supports different application layer protocols at its reverse proxy.
-Different protocols are useful for different use-cases: CoAP for lightweight
-communication, e.g., for IoT devices; HTTP to support traditional web
-applications; GRPC for inter-process communication.
-
-#### CoAP
-
-To call a tinyFaaS function using its CoAP endpoint, make a GET or POST request
-to `coap://{HOST}:{PORT}/{NAME}` where `{HOST}` is the address of the tinyFaaS
-host, `{PORT}` is the port for the tinyFaaS CoAP endpoint (default is `5683`),
-and `{NAME}` is the name of your function. You may include data in any form you
-want, it will be passed to your function.
-
-Unfortunately, [`curl` does not yet support
-CoAP](https://curl.se/mail/lib-2018-05/0017.html), but [a
-number](https://github.com/coapjs/coap-cli) [of
-other](https://aiocoap.readthedocs.io/en/latest/tools.html) [tools are
-available](https://fitbit.github.io/golden-gate/tools/coap_client.html).
+Different protocols are useful for different use-cases: HTTP to support
+traditional web applications, GRPC for inter-process communication.
 
 #### HTTP
 
@@ -229,7 +214,6 @@ By default, tinyFaaS will use the following ports:
 | ---- | -------- | ------------------ |
 | 8080 | TCP      | Management Service |
 | 8081 | TCP      | Reverse Proxy      |
-| 5683 | UDP      | CoAP Endpoint      |
 | 8000 | TCP      | HTTP Endpoint      |
 | 9000 | TCP      | GRPC Endpoint      |
 
@@ -243,13 +227,13 @@ The reverse proxy exposes Prometheus metrics at `http://<host>:8081/metrics`:
   function handler (regardless of the protocol used to invoke the function), or
   `502` if the function handler could not be reached.
 
-To change or deactivate the endpoints of tinyFaaS, you can use the `COAP_PORT`,
-`HTTP_PORT`, and `GRPC_PORT` environment variables. Specify `-1` to deactivate a
-specific endpoint. For example, to use `6000` as the port for the CoAP and
-deactivate GRPC, build tinyFaaS and run it with this command:
+To change or deactivate the endpoints of tinyFaaS, you can use the `HTTP_PORT`
+and `GRPC_PORT` environment variables. Specify `-1` to deactivate a specific
+endpoint. For example, to use `6000` as the port for HTTP and deactivate GRPC,
+build tinyFaaS and run it with this command:
 
 ```sh
-$ sudo env COAP_PORT=6000 GRPC_PORT=-1 ./tinyfaas-linux-amd64
+$ sudo env HTTP_PORT=6000 GRPC_PORT=-1 ./tinyfaas-linux-amd64
 ```
 
 ### Tests
@@ -264,8 +248,8 @@ Running the tests requires:
 - Python >3.10
 - a tinyFaaS binary built for your host
 
-The Python dependencies for CoAP and gRPC are installed automatically by `uv`
-when you run `just test`. Run the tests with `just test`. You will be able to
+The Python dependencies for gRPC are installed automatically by `uv` when you
+run `just test`. Run the tests with `just test`. You will be able to
 see the output and result for each test. tinyFaaS output will be written to
 `tf_test.out`.
 

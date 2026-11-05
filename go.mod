@@ -7,7 +7,6 @@ require (
 	github.com/moby/go-archive v0.3.3
 	github.com/moby/moby/api v1.56.1
 	github.com/moby/moby/client v0.6.2
-	github.com/pfandzelter/go-coap v0.1.0
 	github.com/prometheus/client_golang v1.25.0
 	google.golang.org/grpc v1.85.0
 	google.golang.org/protobuf v1.36.12

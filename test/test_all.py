@@ -17,7 +17,6 @@ connection: typing.Dict[str, typing.Union[str, int]] = {
     "management_port": 8080,
     "http_port": 8000,
     "grpc_port": 9000,
-    "coap_port": 5683,
 }
 
 tf_process: typing.Optional[subprocess.Popen] = None  # type: ignore
@@ -41,7 +40,6 @@ def setUpModule() -> None:
         env = os.environ.copy()
         env["HTTP_PORT"] = str(connection["http_port"])
         env["GRPC_PORT"] = str(connection["grpc_port"])
-        env["COAP_PORT"] = str(connection["coap_port"])
 
         global tf_process
 
@@ -179,7 +177,6 @@ class TinyFaaSTest(unittest.TestCase):
         self.host = connection["host"]
         self.http_port = connection["http_port"]
         self.grpc_port = connection["grpc_port"]
-        self.coap_port = connection["coap_port"]
 
 
 class TestSieve(TinyFaaSTest):
@@ -221,35 +218,6 @@ class TestSieve(TinyFaaSTest):
 
         # check the response
         self.assertEqual(res.status, 202)
-
-        return
-
-    def test_invoke_coap(self) -> None:
-        """invoke a function with CoAP"""
-
-        try:
-            import asyncio
-            import aiocoap  # type: ignore
-        except ImportError:
-            self.skipTest(
-                "aiocoap is not installed -- if you want to run CoAP tests, install the dependencies in requirements.txt"
-            )
-            return
-
-        msg = aiocoap.Message(
-            code=aiocoap.GET, uri=f"coap://{self.host}:{self.coap_port}/{self.fn}"
-        )
-
-        async def main() -> aiocoap.Message:
-            protocol = await aiocoap.Context.create_client_context()
-            response = await protocol.request(msg).response
-            await protocol.shutdown()
-            return response
-
-        response = asyncio.run(main())
-
-        self.assertIsNotNone(response)
-        self.assertEqual(response.code, aiocoap.CONTENT)
 
         return
 
@@ -301,41 +269,6 @@ class TestEcho(TinyFaaSTest):
         # check the response
         self.assertEqual(res.status, 200)
         self.assertEqual(res.read().decode("utf-8"), payload)
-
-        return
-
-    def test_invoke_coap(self) -> None:
-        """invoke a function with CoAP"""
-
-        try:
-            import asyncio
-            import aiocoap
-        except ImportError:
-            self.skipTest(
-                "aiocoap is not installed -- if you want to run CoAP tests, install the dependencies in requirements.txt"
-            )
-            return
-
-        # make a request to the function with a payload
-        payload = "Hello World!"
-
-        msg = aiocoap.Message(
-            code=aiocoap.GET,
-            uri=f"coap://{self.host}:{self.coap_port}/{self.fn}",
-            payload=payload.encode("utf-8"),
-        )
-
-        async def main() -> aiocoap.Message:
-            protocol = await aiocoap.Context.create_client_context()
-            response = await protocol.request(msg).response
-            await protocol.shutdown()
-            return response
-
-        response = asyncio.run(main())
-
-        self.assertIsNotNone(response)
-        self.assertEqual(response.code, aiocoap.CONTENT)
-        self.assertEqual(response.payload.decode("utf-8"), payload)
 
         return
 
@@ -395,41 +328,6 @@ class TestEchoJS(TinyFaaSTest):
 
         return
 
-    def test_invoke_coap(self) -> None:
-        """invoke a function with CoAP"""
-
-        try:
-            import asyncio
-            import aiocoap
-        except ImportError:
-            self.skipTest(
-                "aiocoap is not installed -- if you want to run CoAP tests, install the dependencies in requirements.txt"
-            )
-            return
-
-        # make a request to the function with a payload
-        payload = "Hello World!"
-
-        msg = aiocoap.Message(
-            code=aiocoap.GET,
-            uri=f"coap://{self.host}:{self.coap_port}/{self.fn}",
-            payload=payload.encode("utf-8"),
-        )
-
-        async def main() -> aiocoap.Message:
-            protocol = await aiocoap.Context.create_client_context()
-            response = await protocol.request(msg).response
-            await protocol.shutdown()
-            return response
-
-        response = asyncio.run(main())
-
-        self.assertIsNotNone(response)
-        self.assertEqual(response.code, aiocoap.CONTENT)
-        self.assertEqual(response.payload.decode("utf-8"), payload)
-
-        return
-
     def test_invoke_grpc(self) -> None:
         """invoke a function"""
         try:
@@ -485,41 +383,6 @@ class TestBinary(TinyFaaSTest):
         # check the response
         self.assertEqual(res.status, 200)
         self.assertEqual(res.read().decode("utf-8"), payload)
-
-        return
-
-    def test_invoke_coap(self) -> None:
-        """invoke a function with CoAP"""
-
-        try:
-            import asyncio
-            import aiocoap
-        except ImportError:
-            self.skipTest(
-                "aiocoap is not installed -- if you want to run CoAP tests, install the dependencies in requirements.txt"
-            )
-            return
-
-        # make a request to the function with a payload
-        payload = "Hello World!"
-
-        msg = aiocoap.Message(
-            code=aiocoap.GET,
-            uri=f"coap://{self.host}:{self.coap_port}/{self.fn}",
-            payload=payload.encode("utf-8"),
-        )
-
-        async def main() -> aiocoap.Message:
-            protocol = await aiocoap.Context.create_client_context()
-            response = await protocol.request(msg).response
-            await protocol.shutdown()
-            return response
-
-        response = asyncio.run(main())
-
-        self.assertIsNotNone(response)
-        self.assertEqual(response.code, aiocoap.CONTENT)
-        self.assertEqual(response.payload.decode("utf-8"), payload)
 
         return
 
@@ -585,8 +448,6 @@ class TestShowHeadersJS(TinyFaaSTest):
         self.assertIn("Python-urllib", response_json["user-agent"])  # python client
 
         return
-
-    #     def test_invoke_coap(self) -> None: # CoAP does not support headers
 
     def test_invoke_grpc(self) -> None:
         """invoke a function"""
@@ -659,8 +520,6 @@ class TestShowHeaders(
         self.assertIn("Python-urllib", response_json["User-Agent"])  # python client
 
         return
-
-    #     def test_invoke_coap(self) -> None: # CoAP does not support headers, instead you have
 
     def test_invoke_grpc(self) -> None:
         """invoke a function"""

@@ -36,7 +36,6 @@ func main() {
 	log.SetPrefix("manager: ")
 
 	ports := map[string]int{
-		"coap": 5683,
 		"http": 8000,
 		"grpc": 9000,
 	}

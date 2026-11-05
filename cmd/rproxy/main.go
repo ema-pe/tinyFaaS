@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/OpenFogStack/tinyFaaS/pkg/coap"
 	"github.com/OpenFogStack/tinyFaaS/pkg/grpc"
 	tfhttp "github.com/OpenFogStack/tinyFaaS/pkg/http"
 	"github.com/OpenFogStack/tinyFaaS/pkg/rproxy"
@@ -20,7 +19,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.SetPrefix("rproxy: ")
 
-	if len(os.Args) <= 3 {
+	if len(os.Args) < 3 {
 		fmt.Println("Usage: ./rproxy <listen-addr> [<protocol>:<listen-addr>]")
 		os.Exit(1)
 	}
@@ -50,9 +49,6 @@ func main() {
 
 	r := rproxy.New()
 
-	if listenAddr, ok := listenAddrs["coap"]; ok {
-		go coap.Start(r, listenAddr)
-	}
 	if listenAddr, ok := listenAddrs["http"]; ok {
 		go tfhttp.Start(r, listenAddr)
 	}

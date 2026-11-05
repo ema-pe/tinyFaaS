@@ -311,7 +311,7 @@ func (ms *ManagementService) Upload(name string, env string, threads int, zipped
 	for prot, port := range ms.rproxyPort {
 		// If ms.rproxyListenAddress is empty means that tinyFaaS accepts
 		// connection from any interface, including "localhost". We need to set
-		// this value to print a meaningful HTTP/COAP/gRPC address.
+		// this value to print a meaningful HTTP/gRPC address.
 		listenAddr := ms.rproxyListenAddress
 		if ms.rproxyListenAddress == "" {
 			listenAddr = "localhost"
