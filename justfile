@@ -37,8 +37,6 @@ install-protoc:
     case "$(uname -s)-$(uname -m)" in
         Linux-x86_64)          platform="linux-x86_64" ;;
         Linux-aarch64|Linux-arm64) platform="linux-aarch_64" ;;
-        Darwin-x86_64)         platform="osx-x86_64" ;;
-        Darwin-arm64)          platform="osx-aarch_64" ;;
         *) echo "unsupported platform: $(uname -s)-$(uname -m)" >&2; exit 1 ;;
     esac
 

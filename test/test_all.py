@@ -56,8 +56,6 @@ def setUpModule() -> None:
 
         if uname.sysname == "Linux":
             os_name = "linux"
-        elif uname.sysname == "Darwin":
-            os_name = "darwin"
         else:
             raise Exception(f"Unsupported operating system: {uname.sysname}")
 

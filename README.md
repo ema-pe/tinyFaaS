@@ -3,39 +3,14 @@
 tinyFaaS is a lightweight FaaS (Function-as-a-Service) platform for edge
 environment with a focus on performance in constrained environments.
 
-## Research
+This is a fork of the original tinyFaaS, created by Tobias Pfandzelter and David
+Bermbach. Most of the original code and design is preserved in this fork. The
+build system has been changed from Makefile to Just, and a few other minor
+things have been updated. Another difference is that this fork supports only
+Linux.
 
-To use tinyFaaS in the version used in our paper, use `git checkout v0.1`.
-If you use this software in a publication, please cite it as:
-
-### Text
-
-T. Pfandzelter and D. Bermbach, **tinyFaaS: A Lightweight FaaS Platform for Edge
-Environments**, Proceedings of the 2020 IEEE International Conference on Fog
-Computing (ICFC '20), Sydney, Australia, 2020, pp. 17-24, DOI:
-10.1109/ICFC49376.2020.00011.
-
-### BibTeX
-
-```bibtex
-@inproceedings{pfandzelter_tinyfaas:_2020,
-    author = "Pfandzelter, Tobias and Bermbach, David",
-    title = "tinyFaaS: A Lightweight FaaS Platform for Edge Environments",
-    booktitle = "Proceedings of the 2020 IEEE International Conference on Fog Computing (ICFC '20)",
-    year = 2020,
-    publisher = "IEEE",
-    pages = "17--24",
-    doi = "10.1109/ICFC49376.2020.00011"
-}
-```
-
-For a full list of publications, please see [our
-website](https://www.tu.berlin/en/3s/research/publications).
-
-### License
-
-The code in this repository is licensed under the terms of the [MIT](./LICENSE)
-license.
+For the original tinyFaaS, please refer to its official [GitHub
+repository](https://github.com/OpenFogStack/tinyFaaS).
 
 ## Instructions
 
@@ -57,19 +32,16 @@ is deployed to tinyFaaS, function handlers are created automatically.
 
 Before you get started, make sure you have the following dependencies installed:
 
-- Go (>=v1.22) to compile management service and reverse proxy
-- Docker (>=v24)
+- Go to compile management service and reverse proxy
+- Docker
 - [just](https://github.com/casey/just)
 - curl and unzip, only for `just install-protoc`
 - [uv](https://docs.astral.sh/uv/), used to run the Python tooling
 - a writable directory (tinyFaaS writes temporary files to a `./tmp` directory)
 
-Note that tinyFaaS is intended for Linux hosts (`x86_64` and `arm64`). Due to
-limitations of Docker Desktop for Mac, installing and running
-[`docker-mac-net-connect`](https://github.com/chipmk/docker-mac-net-connect) is
-necessary to run tinyFaaS on macOS hosts. Running tinyFaaS on Windows computers
-(native or through WSL) is probably possible but has not been tested and is thus
-not recommended.
+The original tinyFaaS should also work on macOS and on arm64 Linux, but I have
+only tested it on Linux x86_64. Also, the modifications I made in this fork do
+not take macOS and arm64 into account.
 
 #### One-Time Setup
 
@@ -297,18 +269,6 @@ when you run `just test`. Run the tests with `just test`. You will be able to
 see the output and result for each test. tinyFaaS output will be written to
 `tf_test.out`.
 
-On macOS,
-[`docker-mac-net-connect`](https://github.com/chipmk/docker-mac-net-connect) is
-necessary to run tinyFaaS. There is a [known issue in
-`docker-mac-net-connect`](https://github.com/chipmk/docker-mac-net-connect/issues/36)
-that silently breaks the tunnel when Docker Desktop enters its resource saver
-mode. If you find that tinyFaaS does not start properly on your macOS host, try
-restarting the tunnel:
-
-```sh
-sudo brew services restart docker-mac-net-connect
-```
-
 ### Known limitations
 
 #### HTTP status code and headers
@@ -336,3 +296,8 @@ codes to the client:
 The reverse proxy does not set a timeout for a function request. A synchronous
 function that hangs keeps the client waiting forever instead of getting an error
 code.
+
+### License
+
+The code in this repository is licensed under the terms of the [MIT](./LICENSE)
+license.
