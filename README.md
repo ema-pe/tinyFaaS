@@ -246,11 +246,13 @@ documentation on the expected behavior of tinyFaaS.
 Running the tests requires:
 
 - Python >3.10
-- a tinyFaaS binary built for your host
+- `just`, `uv` and Docker
+- `sudo` access, as tinyFaaS needs it to manage Docker containers
 
-The Python dependencies for gRPC are installed automatically by `uv` when you
-run `just test`. Run the tests with `just test`. You will be able to
-see the output and result for each test. tinyFaaS output will be written to
+Run the tests from the repository root with `just test`. This builds tinyFaaS
+for your host and runs the tests with `uv`. The tests start their own tinyFaaS
+instance, so make sure no other instance is running. You will be able to see the
+output and result for each test, and tinyFaaS output will be written to
 `tf_test.out`.
 
 ### Known limitations

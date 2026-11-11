@@ -1,4 +1,13 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     # Keep in sync with pkg/grpc/tinyfaas/requirements.txt, which is used to
+#     # generate the gRPC stubs imported by these tests.
+#     "grpcio==1.63.0",
+#     "protobuf==5.27.2",
+# ]
+# ///
 
 import unittest
 
@@ -227,7 +236,7 @@ class TestSieve(TinyFaaSTest):
             import grpc  # type: ignore
         except ImportError:
             self.skipTest(
-                "grpc is not installed -- if you want to run gRPC tests, install the dependencies in requirements.txt"
+                "grpc is not installed -- run the tests with `just test` to get the gRPC dependencies"
             )
 
         import tinyfaas_pb2
@@ -278,7 +287,7 @@ class TestEcho(TinyFaaSTest):
             import grpc
         except ImportError:
             self.skipTest(
-                "grpc is not installed -- if you want to run gRPC tests, install the dependencies in requirements.txt"
+                "grpc is not installed -- run the tests with `just test` to get the gRPC dependencies"
             )
 
         import tinyfaas_pb2
@@ -334,7 +343,7 @@ class TestEchoJS(TinyFaaSTest):
             import grpc
         except ImportError:
             self.skipTest(
-                "grpc is not installed -- if you want to run gRPC tests, install the dependencies in requirements.txt"
+                "grpc is not installed -- run the tests with `just test` to get the gRPC dependencies"
             )
 
         import tinyfaas_pb2
@@ -392,7 +401,7 @@ class TestBinary(TinyFaaSTest):
             import grpc
         except ImportError:
             self.skipTest(
-                "grpc is not installed -- if you want to run gRPC tests, install the dependencies in requirements.txt"
+                "grpc is not installed -- run the tests with `just test` to get the gRPC dependencies"
             )
 
         import tinyfaas_pb2
@@ -455,7 +464,7 @@ class TestShowHeadersJS(TinyFaaSTest):
             import grpc
         except ImportError:
             self.skipTest(
-                "grpc is not installed -- if you want to run gRPC tests, install the dependencies in requirements.txt"
+                "grpc is not installed -- run the tests with `just test` to get the gRPC dependencies"
             )
 
         import tinyfaas_pb2
@@ -527,7 +536,7 @@ class TestShowHeaders(
             import grpc
         except ImportError:
             self.skipTest(
-                "grpc is not installed -- if you want to run gRPC tests, install the dependencies in requirements.txt"
+                "grpc is not installed -- run the tests with `just test` to get the gRPC dependencies"
             )
 
         import tinyfaas_pb2
