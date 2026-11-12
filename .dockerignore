@@ -1,0 +1,3 @@
+# The image only needs the prebuilt binary, so keep the build context minimal.
+*
+!tinyfaas-linux-amd64

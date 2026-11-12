@@ -83,7 +83,7 @@ proto-py:
 # Build the reverse proxy for a given os/arch target (`just rproxy linux arm64`).
 [arg("arch", pattern="amd64|arm|arm64")]
 rproxy os arch: proto-go proto-py
-    GOOS={{os}} GOARCH={{arch}} go build -o cmd/manager/rproxy-{{os}}-{{arch}}.bin -v {{pkg}}/cmd/rproxy
+    CGO_ENABLED=0 GOOS={{os}} GOARCH={{arch}} go build -o cmd/manager/rproxy-{{os}}-{{arch}}.bin -v {{pkg}}/cmd/rproxy
 
 # Build the runtime images/blobs for one architecture.
 [arg("arch", pattern="amd64|arm|arm64")]
@@ -129,4 +129,8 @@ runtimes-all: (runtimes "amd64") (runtimes "arm") (runtimes "arm64")
 # Build the management service for a given os/arch target (`just tinyfaas linux arm64`).
 [arg("arch", pattern="amd64|arm|arm64")]
 tinyfaas os arch: (rproxy os arch) (runtimes arch)
-    GOOS={{os}} GOARCH={{arch}} go build -o tinyfaas-{{os}}-{{arch}} -v {{pkg}}/cmd/manager
+    CGO_ENABLED=0 GOOS={{os}} GOARCH={{arch}} go build -o tinyfaas-{{os}}-{{arch}} -v {{pkg}}/cmd/manager
+
+# Build the Docker image for linux/amd64 and tag it locally as `tinyfaas:dev`.
+docker: (tinyfaas "linux" "amd64")
+    sudo docker build --platform=linux/amd64 --tag tinyfaas:dev .

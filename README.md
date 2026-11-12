@@ -71,6 +71,39 @@ This builds tinyFaaS for your host platform if necessary and runs it with
 The reverse proxy will be started automatically. Please note that you cannot use
 tinyFaaS until the reverse proxy is running.
 
+### Running as a Docker Container
+
+tinyFaaS can also run as a Docker container. Build the image, tagged locally as
+`tinyfaas:dev`, with:
+
+```sh
+just docker
+```
+
+Then run it:
+
+```sh
+sudo docker run --detach --name tinyfaas --network host \
+    --volume /var/run/docker.sock:/var/run/docker.sock tinyfaas:dev
+```
+
+Both options are required:
+
+* `--volume`: tinyFaaS manages function containers through the host Docker
+  daemon, so it needs its socket.
+
+* `--network`: each function runs on its own Docker network, and the management
+  service and the reverse proxy reach the function containers directly on their
+  IPs. From the host network namespace they are reachable, whereas from a
+  container on a regular Docker network they are not.
+
+The ports can be changed with `--env HTTP_PORT=...` and `--env GRPC_PORT=...`,
+as described in [Specifying Ports](#specifying-ports). Follow the logs with
+`sudo docker logs --follow tinyfaas`.
+
+`sudo docker stop tinyfaas` stops the reverse proxy and removes all function
+handlers before exiting.
+
 ### Managing Functions
 
 To manage functions on tinyFaaS, use the `./tinyfaas-cli.py` script. Run
@@ -201,10 +234,11 @@ data in any form you want.
 
 ### Removing tinyFaaS
 
-When you stop the management service with `SIGINT` (`Ctrl+C`), the reverse proxy
-and all function handlers should be stopped. You can also use `just
-clean-docker` to delete generated Docker containers, networks and images, or
-`just clean` to delete also generated files in the repository.
+When you stop the management service with `SIGINT` (`Ctrl+C`) or `SIGTERM` (e.g.
+`kill` or `docker stop`), the reverse proxy and all function handlers should be
+stopped. You can also use `just clean-docker` to delete generated Docker
+containers, networks and images, or `just clean` to delete also generated files
+in the repository.
 
 ### Specifying Ports
 
