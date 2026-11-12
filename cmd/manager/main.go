@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -15,6 +16,8 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/OpenFogStack/tinyFaaS/pkg/docker"
 	"github.com/OpenFogStack/tinyFaaS/pkg/manager"
@@ -25,6 +28,12 @@ const (
 	ConfigPort          = 8080
 	RProxyConfigPort    = 8081
 	RProxyListenAddress = ""
+
+	// ShutdownTimeout is how long to wait for in-flight requests to the
+	// management API before giving up and cleaning up anyway. Keep it below
+	// the "docker stop" grace period (10s by default), otherwise the cleanup
+	// may be cut short by SIGKILL.
+	ShutdownTimeout = 5 * time.Second
 )
 
 type server struct {
@@ -32,6 +41,10 @@ type server struct {
 }
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.SetPrefix("manager: ")
 
@@ -50,7 +63,8 @@ func main() {
 		port, err := strconv.Atoi(portstr)
 
 		if err != nil {
-			log.Fatalf("invalid port for protocol %s: %s (must be an integer!)", p, err)
+			log.Printf("invalid port for protocol %s: %s (must be an integer!)", p, err)
+			return 1
 		}
 
 		if port < 0 {
@@ -59,7 +73,8 @@ func main() {
 		}
 
 		if port > 65535 {
-			log.Fatalf("invalid port for protocol %s: %s (must be an integer lower than 65535!)", p, err)
+			log.Printf("invalid port for protocol %s: %s (must be an integer lower than 65535!)", p, err)
+			return 1
 		}
 
 		ports[p] = port
@@ -82,7 +97,8 @@ func main() {
 		log.Println("using docker backend")
 		tfBackend = docker.New(id)
 	default:
-		log.Fatalf("invalid backend %s", backend)
+		log.Printf("invalid backend %s", backend)
+		return 1
 	}
 
 	ms := manager.New(
@@ -106,12 +122,14 @@ func main() {
 
 	err := os.MkdirAll(rProxyDir, 0755)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return 1
 	}
 
 	err = os.WriteFile(path.Join(rProxyDir, "rproxy.bin"), RProxyBin, 0755)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return 1
 	}
 
 	defer os.RemoveAll(rProxyDir)
@@ -119,12 +137,14 @@ func main() {
 	c := exec.Command(path.Join(rProxyDir, "rproxy.bin"), rproxyArgs...)
 	stdout, err := c.StdoutPipe()
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return 1
 	}
 
 	stderr, err := c.StderrPipe()
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return 1
 	}
 
 	go func() {
@@ -142,7 +162,8 @@ func main() {
 	}()
 
 	if err := c.Start(); err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return 1
 	}
 
 	rproxy := c.Process
@@ -160,39 +181,58 @@ func main() {
 	r.HandleFunc("/logs", s.logsHandler)
 	r.HandleFunc("/uploadURL", s.urlUploadHandler)
 
+	srv := &http.Server{Addr: fmt.Sprintf(":%d", ConfigPort), Handler: r}
+
+	// Handle SIGINT (Ctrl+C) and SIGTERM (issued by "docker stop" or "kill")
+	// signals.
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
+	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sig)
+
+	// On a signal, gracefully shut down the HTTP server: this makes
+	// ListenAndServe below return, so run() can clean up and return normally.
+	shutdownDone := make(chan struct{})
 	go func() {
-		<-sig
+		defer close(shutdownDone)
 
-		log.Println("received interrupt")
-		log.Println("shutting down")
+		received := <-sig
+		log.Printf("received signal %s", received)
+		log.Println("shutting down HTTP server")
 
-		// stop rproxy
-		log.Println("stopping rproxy")
-		err := rproxy.Kill()
-
-		if err != nil {
-			log.Println(err)
+		ctx, cancel := context.WithTimeout(context.Background(), ShutdownTimeout)
+		defer cancel()
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Printf("error shutting down HTTP server: %s", err)
 		}
-
-		// stop handlers
-		log.Println("stopping management service")
-		err = ms.Stop()
-
-		if err != nil {
-			log.Println(err)
-		}
-
-		os.Exit(0)
 	}()
 
-	// start server
+	exitCode := 0
+
 	log.Println("starting HTTP server")
-	addr := fmt.Sprintf(":%d", ConfigPort)
-	if err := http.ListenAndServe(addr, r); err != nil {
-		log.Fatal(err)
+	err = srv.ListenAndServe()
+	if errors.Is(err, http.ErrServerClosed) {
+		// Graceful shutdown: wait for in-flight requests (or the timeout).
+		<-shutdownDone
+	} else {
+		log.Print(err)
+		exitCode = 1
 	}
+
+	// Clean up on both paths, so rproxy and function containers are not left
+	// behind if the server fails to start.
+	log.Println("stopping rproxy")
+	if err := rproxy.Kill(); err != nil {
+		log.Println(err)
+	}
+	// Wait for rproxy termination.
+	_ = c.Wait()
+
+	log.Println("stopping management service")
+	if err := ms.Stop(); err != nil {
+		log.Println(err)
+	}
+
+	return exitCode
 }
 
 func (s *server) uploadHandler(w http.ResponseWriter, r *http.Request) {
