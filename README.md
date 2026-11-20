@@ -117,13 +117,11 @@ Examples:
 
 ### Other commands
 
-| Command                           | Description                    |
-| --------------------------------- | ------------------------------ |
-| `./tinyfaas-cli.py list`          | List deployed functions        |
-| `./tinyfaas-cli.py delete {NAME}` | Delete a function              |
-| `./tinyfaas-cli.py wipe`          | Delete all functions           |
-| `./tinyfaas-cli.py logs`          | Show the logs of all functions |
-| `./tinyfaas-cli.py logs {NAME}`   | Show the logs of one function  |
+* `./tinyfaas-cli.py list`: list deployed functions.
+* `./tinyfaas-cli.py delete {NAME}`: delete a function.
+* `./tinyfaas-cli.py wipe`: delete all functions.
+* `./tinyfaas-cli.py logs`: show the logs of all functions.
+* `./tinyfaas-cli.py logs {NAME}`: show the logs of one function.
 
 ## Writing Functions
 
